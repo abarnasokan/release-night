@@ -1,6 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
 import { Shell } from '@/components/shell';
-import {deployAccess,deploySettings} from '@/lib/vercel-deploy';
 import { DemoWorkspace } from '@/components/demo-workspace';
 import { configured, supabase } from '@/lib/supabase/server';
 import type { Release } from '@/lib/domain/readiness';
@@ -13,7 +12,5 @@ export default async function ReleasePage({params,searchParams}:{params:Promise<
     const {data,error}=await db.from('releases').select('*').eq('id',id).single();
     if(error||!data)notFound();
     const query=await searchParams;
-    const settings=deploySettings();
-    const deploymentAccess=deployAccess(user.email,!!user.email_confirmed_at,settings);
-    return <Shell email={user.email}><DemoWorkspace deploymentAccess={deploymentAccess} deploymentConfigured={!!settings} release={{...data,release_checks:[]} as Release} ownerId={user.id} initialTab={query.tab==='release'?'release':'checks'}/></Shell>;
+    return <Shell email={user.email}><DemoWorkspace release={{...data,release_checks:[]} as Release} ownerId={user.id} initialTab={query.tab==='release'?'release':'checks'}/></Shell>;
 }
