@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
         if (!parsed.success)
             return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid form' }, { status: 400 });
         const { action, ...data } = parsed.data;
+        if(action!=='create') return NextResponse.json({error:'Release progress and test edits are saved in this browser.'},{status:409});
         const { data: id, error } = await db.rpc('mutate_release', { p_action: action, p_release: raw.release_id ?? null, p_revision: raw.revision ?? null, p_data: data });
         if (error)
             return NextResponse.json({ error: error.message }, { status: 409 });

@@ -12,3 +12,16 @@ test('current required passes permit optional pending, failed and stale warnings
 test('old revision passes cannot ship', () => { assert.equal(effectiveState(check(), 2), 'stale'); assert.equal(readiness([check()], 2).ready, false); });
 test('changing version back cannot revive older results', () => { assert.equal(readiness([check()], 3).ready, false); assert.equal(readiness([check({ verified_revision: 3 })], 3).ready, true); });
 test('optional to required immediately blocks on a failed result', () => { const c = check({ required: false, result: 'failed' }); assert.equal(readiness([check(), c], 1).ready, true); assert.equal(readiness([check(), { ...c, required: true }], 1).ready, false); });
+test('disabled required failures and optional warnings are excluded', () => {
+    const r = readiness([check(), check({ name: 'Disabled failure', enabled: false, result: 'failed' }), check({ name: 'Disabled warning', enabled: false, required: false, result: 'pending' })], 1);
+    assert.equal(r.ready, true);
+    assert.equal(r.total, 1);
+    assert.deepEqual(r.warnings, []);
+});
+test('disabling every required check does not allow shipping', () => {
+    assert.equal(readiness([check({ enabled: false })], 1).ready, false);
+});
+test('enabled checks with stale results still block and old snapshots remain supported', () => {
+    assert.equal(readiness([check({ enabled: true, verified_revision: 0 })], 1).ready, false);
+    assert.equal(readiness([check()], 1).ready, true);
+});

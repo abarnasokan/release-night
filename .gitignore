@@ -228,3 +228,7 @@ node_modules
 *.tsbuildinfo
 .DS_Store
 .runner-secrets.json
+
+# Track application libraries despite the Python lib/ exclusion.
+!src/lib/
+!src/lib/**

@@ -1,0 +1,72 @@
+[
+  {
+    "key": "default-01",
+    "slug": "reachable",
+    "name": "Application is reachable",
+    "description": "Homepage responds successfully.",
+    "script": "from sdk import http, result\n\nwith http('/') as response:\n    assert response.status == 200, f'Homepage returned HTTP {response.status}'\n    assert response.read(1024), 'Homepage is empty'\nresult('passed', 'The deployed homepage responds with HTTP 200 and a non-empty body.')\n"
+  },
+  {
+    "key": "default-02",
+    "slug": "signup_button",
+    "name": "Signup button works",
+    "description": "The signup control opens the expected form.",
+    "script": "import re\nfrom sdk import BASE_URL, CONFIG, browser_page, result\n\nwith browser_page() as page:\n    page.goto(BASE_URL, wait_until='domcontentloaded')\n    # Set signup_selector when your app uses a different label or control.\n    control = page.locator(CONFIG['signup_selector']) if CONFIG.get('signup_selector') else page.get_by_role('button', name=re.compile(r'sign up|create account|get started', re.I))\n    control.first.click()\n    # A click alone is not a pass: assert that the signup form appears.\n    page.locator(CONFIG.get('signup_form_selector', 'input[type=\"email\"]')).wait_for(state='visible')\nresult('passed', 'The signup control opens a form with the expected input.')\n"
+  },
+  {
+    "key": "default-03",
+    "slug": "signup_flow",
+    "name": "Signup completes",
+    "description": "A synthetic user completes registration.",
+    "script": "from sdk import browser_page, steps, result\n\n# Configure signup_steps using a disposable test account. Never use a real user.\n# Include a final expect_visible, expect_text, or expect_url assertion.\nwith browser_page() as page:\n    steps(page, 'signup_steps')\nresult('passed', 'The configured signup workflow completed and its assertions passed.')\n"
+  },
+  {
+    "key": "default-04",
+    "slug": "login_flow",
+    "name": "Login and logout work",
+    "description": "A synthetic user signs in and out.",
+    "script": "from sdk import browser_page, steps, result\n\n# login_steps should sign in, assert the account view, sign out, and assert logout.\n# Use {\"action\":\"fill\",\"selector\":\"...\",\"secret\":\"TEST_PASSWORD\"} for passwords.\nwith browser_page() as page:\n    steps(page, 'login_steps')\nresult('passed', 'The configured login/logout workflow and assertions passed.')\n"
+  },
+  {
+    "key": "default-05",
+    "slug": "core_workflow",
+    "name": "Main E2E workflow works",
+    "description": "The application’s primary workflow succeeds.",
+    "script": "from sdk import browser_page, steps, result\n\n# Configure core_steps for your app's primary workflow, including outcome assertions.\nwith browser_page() as page:\n    steps(page, 'core_steps')\nresult('passed', 'The primary user workflow completed and its outcome assertions passed.')\n"
+  },
+  {
+    "key": "default-06",
+    "slug": "persistence",
+    "name": "Saved data persists",
+    "description": "Data survives reload and session changes.",
+    "script": "from sdk import browser_page, steps, result\n\n# persistence_steps must create/save data, reload or start a new session,\n# then assert the saved value is still present. Use disposable synthetic records.\nwith browser_page() as page:\n    steps(page, 'persistence_steps')\nresult('passed', 'The configured persistence workflow and assertions passed.')\n"
+  },
+  {
+    "key": "default-07",
+    "slug": "api_health",
+    "name": "Critical API is healthy",
+    "description": "A configured API endpoint responds successfully.",
+    "script": "from sdk import require_config, http, result\n\n# Example api_path: /api/health. Choose a real endpoint on your deployed app.\nwith http(require_config('api_path')) as response:\n    assert response.status == 200, f'API returned HTTP {response.status}'\nresult('passed', 'The configured critical API endpoint returned HTTP 200.')\n"
+  },
+  {
+    "key": "default-08",
+    "slug": "resource_health",
+    "name": "CPU and memory stay healthy for one hour",
+    "description": "Uses timestamped monitoring data after deployment.",
+    "script": "from datetime import datetime, timezone\nfrom sdk import CONTEXT, CONFIG, DEPLOYMENT_REF, json_endpoint, timestamp, result, require_config\n\nrequire_config('metrics_url')\ndeployed = timestamp(CONTEXT['deployed_at'])\nnow = datetime.now(timezone.utc)\n# This window begins after deployment, not one hour before it.\nif (now - deployed).total_seconds() < 3600:\n    result('observing', 'Waiting for one complete hour of post-deployment CPU/memory metrics. The worker will check again.')\ndata = json_endpoint('metrics_url')\nassert data['deployment_ref'] == DEPLOYMENT_REF, 'Metrics belong to a different deployment'\nsamples = sorted(data.get('samples', []), key=lambda s: timestamp(s['timestamp']))\nif len(samples) < 13:\n    result('inconclusive', 'Need at least 13 timestamped CPU/memory samples covering the last hour.')\ntimes = [timestamp(s['timestamp']) for s in samples]\nassert times[0] >= deployed, 'Metrics include a previous deployment window'\nif (times[-1] - times[0]).total_seconds() < 3600:\n    result('inconclusive', 'Metrics do not cover a full hour after deployment.')\nassert 0 <= (now - times[-1]).total_seconds() <= 120, 'Metrics are stale or in the future'\nassert all(0 < (b-a).total_seconds() <= 300 for a,b in zip(times,times[1:])), 'Metrics contain missing or duplicate intervals'\nassert (now - times[0]).total_seconds() <= 3900, 'Metrics do not describe the latest hour'\nfor sample in samples:\n    assert 0 <= sample['cpu_percent'] <= CONFIG.get('max_cpu_percent', 80), 'CPU crossed the threshold'\n    assert 0 <= sample['memory_percent'] <= CONFIG.get('max_memory_percent', 85), 'Memory crossed the threshold'\nresult('passed', 'CPU and memory stayed within configured limits for a complete post-deployment hour.')\n"
+  },
+  {
+    "key": "default-09",
+    "slug": "active_users",
+    "name": "Active users are healthy",
+    "description": "Uses live activity and error-rate telemetry.",
+    "script": "from datetime import datetime, timezone\nfrom sdk import CONTEXT, CONFIG, DEPLOYMENT_REF, json_endpoint, timestamp, result\n\n# Adapter endpoint contract is documented in runner/README.md.\ndata = json_endpoint('active_users_url')\nassert data['deployment_ref'] == DEPLOYMENT_REF, 'Activity belongs to another deployment'\nstart, end = timestamp(data['window_start']), timestamp(data['window_end'])\nassert start >= timestamp(CONTEXT['deployed_at']) and end > start, 'Activity is not from this deployment window'\nassert 0 <= (datetime.now(timezone.utc) - end).total_seconds() <= 120, 'Activity metrics are stale'\nif data['active_users'] == 0:\n    result('inconclusive', 'No active users observed; live-user health cannot be established.')\nassert data['active_users'] > 0, 'Invalid active-user count'\nassert 0 <= data['error_rate'] <= CONFIG.get('max_error_rate', 0.01), 'Live-user error rate is above the threshold'\nresult('passed', f\"Observed {data['active_users']} active users with error rate within the configured threshold.\")\n"
+  },
+  {
+    "key": "default-10",
+    "slug": "traffic_routing",
+    "name": "Active traffic reaches the new deployment",
+    "description": "Uses request and session routing telemetry.",
+    "script": "from datetime import datetime, timezone\nfrom sdk import CONTEXT, DEPLOYMENT_REF, json_endpoint, timestamp, result\n\n# The adapter must aggregate real request/session deployment identities.\n# A successful homepage request alone does not establish session migration.\ndata = json_endpoint('routing_url')\nassert data['deployment_ref'] == DEPLOYMENT_REF, 'Routing metrics refer to another deployment'\nstart, end = timestamp(data['window_start']), timestamp(data['window_end'])\nassert start >= timestamp(CONTEXT['deployed_at']) and end > start, 'Routing window predates this deployment'\nassert 0 <= (datetime.now(timezone.utc) - end).total_seconds() <= 120, 'Routing metrics are stale'\nif data['requests_new'] == 0 or data['active_sessions_new'] == 0:\n    result('inconclusive', 'Need observed requests and active sessions reaching the new deployment.')\nassert data['requests_new'] > 0 and data['active_sessions_new'] > 0, 'Invalid request/session counts'\nassert data['requests_old'] == 0, 'Requests still reach the previous deployment'\nassert data['active_sessions_old'] == 0, 'Active sessions still reach the previous deployment'\nresult('passed', 'All requests and active sessions in the reported window reached the new deployment.')\n"
+  }
+]

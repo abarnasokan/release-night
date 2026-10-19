@@ -1,7 +1,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, X, ArrowRight, LoaderCircle, Sparkles, Download } from 'lucide-react';
+import { Plus, X, ArrowRight, LoaderCircle, Sparkles } from 'lucide-react';
 export async function mutate(body: object) { const r = await fetch('/api/releases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const data = await r.json(); if (!r.ok)
     throw Error(data.error || 'Unable to save. Retry.'); return data; }
 export function CreateRelease({ disabled = false }: {
@@ -21,7 +21,7 @@ export function CreateRelease({ disabled = false }: {
     finally {
         setBusy(false);
     } }
-    return <><button className="button primary" disabled={disabled} onClick={() => setOpen(true)}><Plus size={16}/> Create release</button>{open && <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="create-title"><button className="close icon-button" aria-label="Close" onClick={() => setOpen(false)}><X /></button><span className="eyebrow">A FRESH START</span><h2 id="create-title">Prepare your next release.</h2><p>Give this release a name and a version. Create a versioned release in your private workspace.</p><form onSubmit={submit}><label>Release name<input autoFocus name="title" required maxLength={120} placeholder="Checkout improvements"/></label><label>Target version<input name="version" required maxLength={80} placeholder="v1.2.0-rc1"/></label>{error && <p className="error" role="alert">{error}</p>}<button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16}/> : <Plus size={16}/>} Create release</button></form></section></div>}</>;
+    return <><button className="button primary" disabled={disabled} onClick={() => setOpen(true)}><Plus size={16}/> Create release</button>{open && <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="create-title"><button className="close icon-button" aria-label="Close" onClick={() => setOpen(false)}><X /></button><span className="eyebrow">A FRESH START</span><h2 id="create-title">Prepare your next release.</h2><p>Give this release a name and a version. Your workspace starts with 10 editable Python test templates.</p><form onSubmit={submit}><label>Release name<input autoFocus name="title" required maxLength={120} placeholder="Checkout improvements"/></label><label>Target version<input name="version" required maxLength={80} placeholder="v1.2.0-rc1"/></label>{error && <p className="error" role="alert">{error}</p>}<button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16}/> : <Plus size={16}/>} Create release</button></form></section></div>}</>;
 }
 export function AuthForm({ setup, error: initialError }: {
     setup: boolean;

@@ -1,46 +1,19 @@
 # Release Night
 
-A private workspace for creating and tracking versioned application releases.
-
-This first increment includes the Next.js/TypeScript foundation, responsive app
-shell, Supabase email/password authentication, session refresh, protected release
-list and detail pages, release creation, and the database ownership/mutation layer.
-The domain module defines revision-bound readiness rules for subsequent UI work.
+A release workspace with authentication, ten editable Python test templates, and a Development → Staging → Production pipeline.
 
 ## Local setup
 
-Use Node.js 22 or newer:
+Use Node.js 22 or newer. Run `npm ci`, copy `.env.example` to `.env.local`, and supply the Supabase project URL and publishable key. Apply `supabase/migrations/001_release_night.sql` in Supabase’s SQL Editor once. Configure the local authentication site URL as `http://localhost:3000` and allow `http://localhost:3000/auth/confirm`. Run `npm run dev`.
 
-```sh
-npm ci
-cp .env.example .env.local
-npm run dev
-```
+## Release flow
 
-Set your development Supabase project URL and publishable key in `.env.local`.
-Apply `supabase/migrations/001_release_night.sql` once in the Supabase SQL Editor.
-Configure Authentication → URL Configuration with Site URL `http://localhost:3000`
-and allowed redirect `http://localhost:3000/auth/confirm`.
+Create a release, open its Release tab, and deploy to Development. Run the suite or individual tests. Passing required tests unlock Staging, and passing Staging tests unlock Production. After Production passes, mark the release shipped. Redeploying, changing the version, or editing the suite invalidates previous verification.
 
-Open `http://localhost:3000/login`, create an account, confirm email if enabled,
-and create a release. The browser uses only the publishable key; all private data
-is scoped by authenticated database policies. Never commit `.env.local` or keys.
+Each release starts with ten Python templates covering availability, signup, login, a core workflow, persistence, API health, resource usage, active users, and traffic routing. Edit scripts, enable or disable checks, choose required checks, or add custom tests.
 
-## Validation
+Execution and environment transitions are simulated: selected tests return passing fixture reports without executing Python or deploying an application. No worker or Docker service is required. Release metadata is stored in Supabase; scripts, deployment history, and results are stored in the current browser, scoped to the signed-in account and release. They do not sync across browsers. Reset workspace clears that release’s local progress.
 
-```sh
-npm test
-npm run typecheck
-npm run build -- --webpack
-```
+## Validation and hosting
 
-Six focused tests cover required-check blockers, optional warnings, stale revisions,
-version-back invalidation, and required-flag changes. Build/type checks validate the
-application source; live Supabase authentication and database behavior require a
-configured development project and are not verified by these unit tests.
-
-## Scope of this increment
-
-The database provides checks and immutable shipping snapshots. Their interactive
-verification/promotion UI, environment pipeline, Python script templates, and LLM
-suite scoring are subsequent increments and are not included in this commit.
+Run `npm test`, `npm run typecheck`, and `npm run build -- --webpack`. For Vercel, use the Next.js framework preset, set the Supabase variables from `.env.example`, and configure the production URL and `/auth/confirm` callback in Supabase. Only migration 001 is needed for this increment.
