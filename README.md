@@ -1,6 +1,6 @@
 # Release Night
 
-A workspace for the checks software engineers perform after a release: can users sign up, does the main workflow still work, and does the application look healthy? Release Night brings those checks into a Development → Staging → Production pipeline, with an LLM review of the test suite and its results.
+A workspace for the checks software engineers perform after a deployment: can users sign up, does the main workflow still work, and does the application look healthy? Release Night brings those checks into a Development → Staging → Production pipeline, with an LLM review of the test suite and its results.
 
 **[Open the live app →](https://release-night-project.vercel.app)**
 
