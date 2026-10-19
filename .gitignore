@@ -218,3 +218,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Next.js application and private local configuration
+node_modules
+.next/
+.env*
+!.env.example
+.vercel/
+*.tsbuildinfo
+.DS_Store
+.runner-secrets.json
