@@ -100,3 +100,23 @@ npm run build -- --webpack
 ```
 
 Tests cover sequential environment gates, separate deployment results, invalidation after edits or redeployments, required and disabled checks, bounded judge inputs, score calculation, and review freshness.
+
+## Screenshots
+
+### Release dashboard
+Create releases and revisit their saved workspaces.
+<img width="1280" height="618" alt="Release" src="https://github.com/user-attachments/assets/13c342ef-ed15-434f-b5c7-3b9e0f4404e1" />
+
+### Environment progression
+Follow a release through Development, Staging, and Production.
+Required checks gate progression; execution is simulated in this POC.
+<img width="1280" height="590" alt="Release Env" src="https://github.com/user-attachments/assets/64c04b22-62e9-4d67-8be4-2079d1363887" />
+
+### AI suite review
+Request an advisory review with category scores, strengths,
+gaps, and suggested next steps. AI feedback does not affect promotion gates.
+<img width="1280" height="589" alt="Ai Feedback" src="https://github.com/user-attachments/assets/d6326102-5d76-4f9b-9d77-c291508d09a3" />
+
+
+
+
