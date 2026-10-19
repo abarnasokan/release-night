@@ -19,12 +19,14 @@ export function latestRun(runs: TestRun[], deploymentId: string, checkId: string
     return runs.filter(r => r.deployment_id === deploymentId && r.check_id === checkId && r.suite_revision === suiteRevision)
         .sort((a,b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id))[0];
 }
+export function deploymentReady(deployment: Deployment | undefined) { return !!deployment && (deployment.config?.provider !== 'vercel' || deployment.config.status === 'READY'); }
 export function verification(release: Pick<Release, 'id' | 'revision' | 'suite_revision' | 'release_checks'>, deployment: Deployment | undefined, runs: TestRun[]) {
     const checks = release.release_checks.filter(c => c.enabled !== false && c.required);
-    const blockers = checks.filter(c => !deployment || latestRun(runs, deployment.id, c.id, release.suite_revision ?? 1)?.status !== 'passed').map(c => c.name);
+    const blockers = checks.filter(c => !deployment || latestRun(runs, deployment!.id, c.id, release.suite_revision ?? 1)?.status !== 'passed').map(c => c.name);
     if (!checks.length) blockers.push('Enable at least one required test');
     if (!deployment) blockers.unshift('Register a deployment before running tests');
-    return { ready: blockers.length === 0, blockers, passed: deployment ? checks.filter(c => latestRun(runs, deployment.id, c.id, release.suite_revision ?? 1)?.status === 'passed').length : 0, total: checks.length };
+    else if (!deploymentReady(deployment)) blockers.unshift('Wait for the Vercel deployment to be ready');
+    return { ready: blockers.length === 0, blockers, passed: deploymentReady(deployment) ? checks.filter(c => latestRun(runs, deployment!.id, c.id, release.suite_revision ?? 1)?.status === 'passed').length : 0, total: checks.length };
 }
 export function deploymentVerified(release: Release, deployment: Deployment | undefined, deployments: Deployment[], runs: TestRun[]): boolean {
     if (!deployment || latestDeployment(deployments, release, deployment.environment)?.id !== deployment.id || !verification(release, deployment, runs).ready) return false;
